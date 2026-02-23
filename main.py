@@ -75,8 +75,7 @@ def decode_image(image_path):
 
 # --- Execution Example ---
 if __name__ == "__main__":
-    # Ensure you have a PNG image named 'vengurla_coast.png' in the same directory
-    input_image = "vengurla_coast.png" 
+    input_image = "test.jpg" 
     output_image = "encoded_image.png"
     message_to_hide = "Silence is the ultimate weapon."
     
