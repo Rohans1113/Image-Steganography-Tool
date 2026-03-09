@@ -63,7 +63,8 @@ export default function TextToText() {
 
     try {
       if (mode === 'encrypt') {
-        const response = await fetch('http://localhost:5000/api/encode', {
+        // Changed localhost to 127.0.0.1
+        const response = await fetch('http://127.0.0.1:5000/api/encode', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ cover_text: coverText, secret_message: secretMsg })
@@ -72,7 +73,8 @@ export default function TextToText() {
         const data = await response.json();
         setOutput(data.encoded_text || 'Error: Could not encode text.');
       } else {
-        const response = await fetch('http://localhost:5000/api/decode', {
+        // Changed localhost to 127.0.0.1
+        const response = await fetch('http://127.0.0.1:5000/api/decode', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ encoded_text: stegoInput })
