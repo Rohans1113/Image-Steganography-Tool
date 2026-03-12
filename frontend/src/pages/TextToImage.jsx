@@ -1,11 +1,10 @@
 import React, { useState } from 'react'
-import { Image } from 'lucide-react'
+import { Image as ImageIcon, Info, Upload } from 'lucide-react'
 import PageLayout from '../components/PageLayout'
 import TabSwitcher from '../components/TabSwitcher'
-import UploadZone from '../components/UploadZone'
 import OutputPanel from '../components/OutputPanel'
 
-const ACCENT = '#00d4ff'
+const ACCENT = '#00bbff'
 
 const label = (text) => (
   <label style={{
@@ -16,29 +15,118 @@ const label = (text) => (
   }}>{text}</label>
 )
 
-export default function TextToImage() {
+const textarea = (props) => (
+  <textarea
+    {...props}
+    style={{
+      width: '100%', backgroundColor: '#0f0f0f',
+      border: '1px solid #1e1e1e', borderRadius: '6px',
+      padding: '16px 18px', color: '#ffffff',
+      fontFamily: "'Space Grotesk', sans-serif",
+      fontSize: '1rem', lineHeight: 1.75,
+      resize: 'vertical', outline: 'none',
+      minHeight: props.tall ? '160px' : '120px',
+      transition: 'border-color 0.2s',
+      ...props.style,
+    }}
+    onFocus={e => e.target.style.borderColor = props.focusColor || ACCENT}
+    onBlur={e => e.target.style.borderColor = '#1e1e1e'}
+  />
+)
+
+const FileUpload = ({ onFileSelect, selectedFile }) => (
+  <div style={{
+    border: `1px dashed ${selectedFile ? ACCENT : '#333'}`,
+    borderRadius: '6px', padding: '2rem', textAlign: 'center',
+    backgroundColor: '#0f0f0f', cursor: 'pointer', transition: 'all 0.2s',
+  }} onClick={() => document.getElementById('file-upload').click()}>
+    <Upload size={24} color={selectedFile ? ACCENT : '#666'} style={{ margin: '0 auto 10px' }} />
+    <p style={{ fontFamily: "'Space Grotesk', sans-serif", color: selectedFile ? '#fff' : '#666', fontSize: '0.9rem' }}>
+      {selectedFile ? selectedFile.name : 'Click to upload an image (PNG, JPG)'}
+    </p>
+    <input
+      id="file-upload" type="file" accept="image/png, image/jpeg"
+      style={{ display: 'none' }}
+      onChange={(e) => onFileSelect(e.target.files[0])}
+    />
+  </div>
+)
+
+export default function TextInImage() {
   const [mode, setMode] = useState('encrypt')
-  const [carrierImg, setCarrierImg] = useState(null)
-  const [stegoImg, setStegoImg] = useState(null)
-  const [secret, setSecret] = useState('')
-  const [output, setOutput] = useState('')
+  const [coverImage, setCoverImage] = useState(null)
+  const [secretMsg, setSecretMsg] = useState('')
+  const [stegoImage, setStegoImage] = useState(null)
+  
+  // output data will now be an object: { type: 'text' | 'image', content: string }
+  const [output, setOutput] = useState(null) 
   const [loading, setLoading] = useState(false)
 
-  const handleRun = () => {
-    setLoading(true); setOutput('')
-    setTimeout(() => {
-      setOutput(mode === 'encrypt' ? null : '// Decoded text will appear here')
-      setLoading(false)
-    }, 1500)
+  const handleRun = async () => {
+    setLoading(true);
+    setOutput(null);
+
+    try {
+      if (mode === 'encrypt') {
+        if (!coverImage || !secretMsg) {
+          setOutput({ type: 'text', content: '// Error: Please provide both an image and a secret message.'});
+          setLoading(false);
+          return;
+        }
+
+        // Use FormData for file uploads
+        const formData = new FormData();
+        formData.append('cover_image', coverImage);
+        formData.append('secret_message', secretMsg);
+
+        // DO NOT set Content-Type header manually when using FormData! The browser does it.
+        const response = await fetch('http://127.0.0.1:5000/api/encode-image', {
+          method: 'POST',
+          body: formData
+        });
+
+        if (!response.ok) throw new Error("Encoding failed");
+
+        // The backend returns an image file (Blob), not JSON!
+        const blob = await response.blob();
+        
+        // Create a local URL for the downloaded blob so we can display it
+        const imageUrl = URL.createObjectURL(blob);
+        setOutput({ type: 'image', content: imageUrl });
+
+      } else {
+        if (!stegoImage) {
+          setOutput({ type: 'text', content: '// Error: Please upload a stego image to decode.'});
+          setLoading(false);
+          return;
+        }
+
+        const formData = new FormData();
+        formData.append('stego_image', stegoImage);
+
+        const response = await fetch('http://127.0.0.1:5000/api/decode-image', {
+          method: 'POST',
+          body: formData
+        });
+
+        const data = await response.json();
+        setOutput({ type: 'text', content: data.decoded_message || 'Error: Could not decode text.' });
+      }
+    } catch (error) {
+      console.error("API Error:", error);
+      setOutput({ type: 'text', content: "// Error: Could not connect to Python backend." });
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
     <PageLayout
       title="Text in Image"
-      subtitle="Embed hidden text into the least significant bits of image pixels. The stego image is visually indistinguishable from the original."
-      badge="Module 02 — Steganography"
+      subtitle="Conceal text inside image files using Least Significant Bit (LSB) manipulation."
+      badge="Module 02 — Image Steganography"
       accentColor={ACCENT}
-      icon={Image}
+      icon={ImageIcon}
     >
       <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
         <TabSwitcher active={mode} onChange={setMode} accentColor={ACCENT} />
@@ -47,47 +135,20 @@ export default function TextToImage() {
           <>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
               <div>
-                {label('Carrier Image (PNG or BMP)')}
-                <UploadZone accept=".png,.bmp" label="carrier image" onFile={setCarrierImg} file={carrierImg} accentColor={ACCENT} />
+                {label('Cover Image')}
+                <FileUpload onFileSelect={setCoverImage} selectedFile={coverImage} />
               </div>
               <div>
-                {label('Secret Text to Embed')}
-                <textarea
-                  style={{
-                    width: '100%', backgroundColor: '#0f0f0f',
-                    border: '1px solid #1e1e1e', borderRadius: '6px',
-                    padding: '16px 18px', color: '#ffffff',
-                    fontFamily: "'Space Grotesk', sans-serif",
-                    fontSize: '1rem', lineHeight: 1.75,
-                    resize: 'vertical', outline: 'none', minHeight: '140px',
-                    transition: 'border-color 0.2s',
-                  }}
-                  placeholder="Enter the text message to hide inside the image..."
-                  value={secret}
-                  onChange={e => setSecret(e.target.value)}
-                  onFocus={e => e.target.style.borderColor = ACCENT}
-                  onBlur={e => e.target.style.borderColor = '#1e1e1e'}
-                />
+                {label('Secret Message')}
+                {textarea({ placeholder: 'Enter the secret message...', value: secretMsg, onChange: e => setSecretMsg(e.target.value), tall: true })}
               </div>
             </div>
           </>
         ) : (
           <>
-            <div style={{ maxWidth: '500px' }}>
-              {label('Stego Image (image containing hidden text)')}
-              <UploadZone accept=".png,.bmp" label="stego image" onFile={setStegoImg} file={stegoImg} accentColor={ACCENT} />
-            </div>
-            <div style={{
-              backgroundColor: '#0f0f0f', border: '1px solid #1a1a1a',
-              borderRadius: '6px', padding: '1rem 1.5rem',
-              fontFamily: "'JetBrains Mono', monospace",
-              fontSize: '0.82rem', color: '#aaa', lineHeight: 1.8,
-            }}>
-              <p>// What happens:</p>
-              <p>1. Read each pixel's RGB values</p>
-              <p>2. Extract least significant bits</p>
-              <p>3. Reassemble bits into bytes → ASCII text</p>
-              <p>4. Output the hidden message</p>
+            <div>
+              {label('Stego Image (upload to decode)')}
+              <FileUpload onFileSelect={setStegoImage} selectedFile={stegoImage} />
             </div>
           </>
         )}
@@ -104,19 +165,22 @@ export default function TextToImage() {
             onMouseEnter={e => e.target.style.opacity = '0.85'}
             onMouseLeave={e => e.target.style.opacity = '1'}
           >
-            {mode === 'encrypt' ? 'Embed into Image →' : 'Extract from Image →'}
+            {mode === 'encrypt' ? 'Hide Data in Image →' : 'Extract Data →'}
           </button>
-          <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.68rem', color: '#2a2a2a' }}>
-            // Python API integration pending
-          </span>
         </div>
 
-        <OutputPanel
-          output={output}
-          type={mode === 'encrypt' ? 'image' : 'text'}
-          loading={loading}
-          accentColor={ACCENT}
-        />
+        {/* Adjusting how output is rendered based on whether it is an image or text */}
+        {output && output.type === 'text' && (
+           <OutputPanel output={output.content} type="text" loading={loading} accentColor={ACCENT} />
+        )}
+
+        {output && output.type === 'image' && (
+          <div style={{ marginTop: '1rem', padding: '1rem', border: '1px solid #1e1e1e', borderRadius: '6px', backgroundColor: '#0f0f0f' }}>
+             {label('Encoded Image (Right-click to Save)')}
+             <img src={output.content} alt="Encoded Stego" style={{ maxWidth: '100%', height: 'auto', borderRadius: '4px' }} />
+          </div>
+        )}
+
       </div>
     </PageLayout>
   )
