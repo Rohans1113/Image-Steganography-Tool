@@ -1,45 +1,73 @@
 from PIL import Image
+import io
 
-def encode_image(image_path, secret_message, output_path):
-    img = Image.open(image_path)
-    encoded_img = img.copy()
-    width, height = img.size
-    
-    secret_message += "#####" # Terminator
-    binary_message = ''.join(format(ord(char), '08b') for char in secret_message)
-    data_len = len(binary_message)
-    data_index = 0
-    
-    for y in range(height):
-        for x in range(width):
-            if data_index < data_len:
-                pixel = list(img.getpixel((x, y)))
-                for c in range(3): # R, G, B
-                    if data_index < data_len:
-                        pixel[c] = pixel[c] & ~1 | int(binary_message[data_index])
-                        data_index += 1
-                encoded_img.putpixel((x, y), tuple(pixel))
-            else:
-                encoded_img.save(output_path)
-                return
+# We need a clear stopping point for the decoder
+DELIMITER = "====END===="
 
-def decode_image(image_path):
-    img = Image.open(image_path)
-    binary_data = ""
-    width, height = img.size
+def encode_text_in_image(image_file, secret_text):
+    # Open image and ensure it's in standard RGB format
+    img = Image.open(image_file)
+    img = img.convert('RGB')
     
-    for y in range(height):
-        for x in range(width):
-            pixel = list(img.getpixel((x, y)))
-            for c in range(3):
-                binary_data += str(pixel[c] & 1)
-                
-    all_bytes = [binary_data[i: i+8] for i in range(0, len(binary_data), 8)]
-    decoded_message = ""
+    # Append delimiter and convert the whole string to binary
+    full_text = secret_text + DELIMITER
+    binary_msg = ''.join(format(ord(char), '08b') for char in full_text)
+    
+    pixels = list(img.getdata())
+    
+    # Ensure the image has enough pixels to hold the message
+    # 1 pixel has 3 color channels (R,G,B), so it can hold 3 bits
+    if len(binary_msg) > len(pixels) * 3:
+        return None, "Error: Secret message is too long for this image size."
+        
+    new_pixels = []
+    msg_idx = 0
+    
+    for pixel in pixels:
+        r, g, b = pixel
+        
+        # Modify the LSB of each color channel if we still have message bits left
+        # (val & ~1) clears the last bit, then | int(bit) inserts our secret bit
+        if msg_idx < len(binary_msg):
+            r = (r & ~1) | int(binary_msg[msg_idx])
+            msg_idx += 1
+        if msg_idx < len(binary_msg):
+            g = (g & ~1) | int(binary_msg[msg_idx])
+            msg_idx += 1
+        if msg_idx < len(binary_msg):
+            b = (b & ~1) | int(binary_msg[msg_idx])
+            msg_idx += 1
+            
+        new_pixels.append((r, g, b))
+        
+    # Create the new stego-image
+    encoded_img = Image.new(img.mode, img.size)
+    encoded_img.putdata(new_pixels)
+    
+    return encoded_img, "Success"
+
+def decode_text_from_image(image_file):
+    img = Image.open(image_file)
+    img = img.convert('RGB')
+    pixels = list(img.getdata())
+    
+    binary_msg = ""
+    for pixel in pixels:
+        r, g, b = pixel
+        # Extract the last bit from each color channel
+        binary_msg += str(r & 1)
+        binary_msg += str(g & 1)
+        binary_msg += str(b & 1)
+        
+    # Group the bits back into 8-bit characters
+    all_bytes = [binary_msg[i: i+8] for i in range(0, len(binary_msg), 8)]
+    decoded_text = ""
+    
     for byte in all_bytes:
-        try:
-            decoded_message += chr(int(byte, 2))
-            if decoded_message.endswith("#####"):
-                return decoded_message[:-5]
-        except: pass
-    return "Error: No hidden message found."
+        if len(byte) == 8:
+            decoded_text += chr(int(byte, 2))
+            # Stop decoding once we hit our secret delimiter
+            if decoded_text.endswith(DELIMITER):
+                return decoded_text[:-len(DELIMITER)]
+                
+    return "No hidden message found."
