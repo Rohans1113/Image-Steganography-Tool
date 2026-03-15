@@ -1,39 +1,60 @@
 from PIL import Image
 
-def merge_images(cover_path, secret_path, output_path):
-    cover = Image.open(cover_path).convert("RGB")
-    secret = Image.open(secret_path).convert("RGB")
-    secret = secret.resize(cover.size) # Resize to fit
+def merge_pixels(pixel1, pixel2):
+    """
+    Takes the top 4 bits of pixel1 (cover) and the top 4 bits of pixel2 (secret).
+    Example for Red channel:
+    Cover Red:  11010110 -> Keep top 4: 11010000 (bitwise AND 240 / 0xF0)
+    Secret Red: 10111001 -> Keep top 4 and shift right: 00001011
+    Merged:     11011011
+    """
+    r1, g1, b1 = pixel1
+    r2, g2, b2 = pixel2
     
-    encoded = Image.new("RGB", cover.size)
-    width, height = cover.size
+    r = (r1 & 0xF0) | (r2 >> 4)
+    g = (g1 & 0xF0) | (g2 >> 4)
+    b = (b1 & 0xF0) | (b2 >> 4)
     
-    for x in range(width):
-        for y in range(height):
-            c = cover.getpixel((x, y))
-            s = secret.getpixel((x, y))
-            # Take top 4 bits of cover, put top 4 bits of secret into bottom 4 bits
-            new_pixel = (
-                (c[0] & 0xF0) | (s[0] >> 4),
-                (c[1] & 0xF0) | (s[1] >> 4),
-                (c[2] & 0xF0) | (s[2] >> 4)
-            )
-            encoded.putpixel((x, y), new_pixel)
-    encoded.save(output_path)
+    return (r, g, b)
 
-def unmerge_images(encoded_path, output_path):
-    img = Image.open(encoded_path).convert("RGB")
-    decoded = Image.new("RGB", img.size)
-    width, height = img.size
+def unmerge_pixel(pixel):
+    """
+    Extracts the bottom 4 bits of the merged pixel and shifts them left 
+    to reconstruct the secret image.
+    Merged:     11011011 -> Keep bottom 4 and shift left: 10110000
+    """
+    r, g, b = pixel
     
-    for x in range(width):
-        for y in range(height):
-            p = img.getpixel((x, y))
-            # Extract bottom 4 bits and move them to top
-            new_pixel = (
-                (p[0] & 0x0F) << 4,
-                (p[1] & 0x0F) << 4,
-                (p[2] & 0x0F) << 4
-            )
-            decoded.putpixel((x, y), new_pixel)
-    decoded.save(output_path)
+    r = (r & 0x0F) << 4
+    g = (g & 0x0F) << 4
+    b = (b & 0x0F) << 4
+    
+    return (r, g, b)
+
+def encode_image_in_image(cover_file, secret_file):
+    cover_img = Image.open(cover_file).convert('RGB')
+    secret_img = Image.open(secret_file).convert('RGB')
+    
+    # Resize the secret image to exactly match the cover image dimensions
+    secret_img = secret_img.resize(cover_img.size)
+    
+    cover_pixels = list(cover_img.getdata())
+    secret_pixels = list(secret_img.getdata())
+    
+    new_pixels = [merge_pixels(cover_pixels[i], secret_pixels[i]) for i in range(len(cover_pixels))]
+    
+    encoded_img = Image.new(cover_img.mode, cover_img.size)
+    encoded_img.putdata(new_pixels)
+    
+    return encoded_img
+
+def decode_image_from_image(stego_file):
+    stego_img = Image.open(stego_file).convert('RGB')
+    stego_pixels = list(stego_img.getdata())
+    
+    extracted_pixels = [unmerge_pixel(pixel) for pixel in stego_pixels]
+    
+    secret_img = Image.new(stego_img.mode, stego_img.size)
+    secret_img.putdata(extracted_pixels)
+    
+    return secret_img

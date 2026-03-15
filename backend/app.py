@@ -1,5 +1,6 @@
 import io
 from flask import Flask, request, jsonify, send_file
+from steg.image_to_image import encode_image_in_image, decode_image_from_image
 from flask_cors import CORS
 
 # Import your steganography logic modules
@@ -73,3 +74,44 @@ def api_decode_image():
 
 if __name__ == '__main__':
     app.run(port=5000, debug=True)
+
+# ==========================================
+# IMAGE IN IMAGE ENDPOINTS
+# ==========================================
+
+@app.route('/api/encode-img2img', methods=['POST'])
+def api_encode_img2img():
+    if 'cover_image' not in request.files or 'secret_image' not in request.files:
+        return jsonify({"error": "Both cover and secret images are required"}), 400
+        
+    cover_file = request.files['cover_image']
+    secret_file = request.files['secret_image']
+    
+    try:
+        encoded_img = encode_image_in_image(cover_file, secret_file)
+        
+        img_io = io.BytesIO()
+        encoded_img.save(img_io, 'PNG')
+        img_io.seek(0)
+        
+        return send_file(img_io, mimetype='image/png', as_attachment=True, download_name='stego_vault_merged.png')
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/decode-img2img', methods=['POST'])
+def api_decode_img2img():
+    if 'stego_image' not in request.files:
+        return jsonify({"error": "No image uploaded"}), 400
+        
+    file = request.files['stego_image']
+    
+    try:
+        extracted_img = decode_image_from_image(file)
+        
+        img_io = io.BytesIO()
+        extracted_img.save(img_io, 'PNG')
+        img_io.seek(0)
+        
+        return send_file(img_io, mimetype='image/png', as_attachment=True, download_name='stego_vault_extracted.png')
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
