@@ -4,7 +4,7 @@ import PageLayout from '../components/PageLayout'
 import TabSwitcher from '../components/TabSwitcher'
 import OutputPanel from '../components/OutputPanel'
 
-const ACCENT = '#00ff87'
+const ACCENT = '#ff0000'
 
 const label = (text) => (
   <label style={{

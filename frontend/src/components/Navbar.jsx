@@ -5,7 +5,7 @@ import { ShieldCheck, FileText, Image, Layers, Film } from 'lucide-react'
 const navItems = [
   { path: '/text-to-text',   label: 'Text in Text',   sub: 'Hide messages in plain text',  icon: FileText, accent: '#00ff87' },
   { path: '/text-to-image',  label: 'Text in Image',  sub: 'Embed text into image pixels',  icon: Image,   accent: '#00d4ff' },
-  { path: '/image-to-image', label: 'Image in Image', sub: 'Hide image inside image',       icon: Layers,  accent: '#ff3cac' },
+  { path: '/image-to-image', label: 'Image in Image', sub: 'Hide image inside image',       icon: Layers,  accent: '#ff0000' },
   { path: '/text-to-gif',    label: 'Text in GIF',    sub: 'Encode text across GIF frames', icon: Film,    accent: '#ffc740' },
 ]
 
