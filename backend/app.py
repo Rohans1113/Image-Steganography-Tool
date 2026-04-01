@@ -2,7 +2,7 @@ import io
 from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
 
-# Import StegoVault logic modules
+# Import all your StegoVault logic modules
 from steg.text_to_text import encode_text, decode_text
 from steg.text_to_image import encode_text_in_image, decode_text_from_image
 from steg.image_to_image import encode_image_in_image, decode_image_from_image
@@ -12,15 +12,13 @@ app = Flask(__name__)
 CORS(app) 
 
 # ==========================================
-# TEXT IN TEXT ENDPOINTS
+# 1. TEXT IN TEXT
 # ==========================================
-
 @app.route('/api/encode', methods=['POST'])
 def api_encode():
     data = request.json
     cover = data.get('cover_text', '')
     secret = data.get('secret_message', '')
-    
     result = encode_text(cover, secret)
     return jsonify({"encoded_text": result})
 
@@ -28,55 +26,39 @@ def api_encode():
 def api_decode():
     data = request.json
     encoded = data.get('encoded_text', '')
-    
     result = decode_text(encoded)
     return jsonify({"decoded_message": result})
 
-
 # ==========================================
-# TEXT IN IMAGE ENDPOINTS
+# 2. TEXT IN IMAGE (PNG/LSB)
 # ==========================================
-
 @app.route('/api/encode-image', methods=['POST'])
 def api_encode_image():
-    # Check if an image file was actually included in the request
     if 'cover_image' not in request.files:
         return jsonify({"error": "No image uploaded"}), 400
-        
     file = request.files['cover_image']
     secret = request.form.get('secret_message', '')
     
     encoded_img, status = encode_text_in_image(file, secret)
-    
     if not encoded_img:
         return jsonify({"error": status}), 400
         
-    # Save the modified image to a memory buffer
     img_io = io.BytesIO()
-    
-    # CRITICAL: We MUST save as PNG. JPEG compression destroys the hidden LSB data!
     encoded_img.save(img_io, 'PNG') 
     img_io.seek(0)
-    
-    # Send the image file directly back to the React frontend
     return send_file(img_io, mimetype='image/png', as_attachment=True, download_name='stego_image.png')
 
 @app.route('/api/decode-image', methods=['POST'])
 def api_decode_image():
-    # Check if a stego image was uploaded for decoding
     if 'stego_image' not in request.files:
         return jsonify({"error": "No image uploaded"}), 400
-        
     file = request.files['stego_image']
     result = decode_text_from_image(file)
-    
     return jsonify({"decoded_message": result})
 
-
 # ==========================================
-# IMAGE IN IMAGE ENDPOINTS
+# 3. IMAGE IN IMAGE (MSB Merge)
 # ==========================================
-
 @app.route('/api/encode-img2img', methods=['POST'])
 def api_encode_img2img():
     if 'cover_image' not in request.files or 'secret_image' not in request.files:
@@ -87,11 +69,9 @@ def api_encode_img2img():
     
     try:
         encoded_img = encode_image_in_image(cover_file, secret_file)
-        
         img_io = io.BytesIO()
         encoded_img.save(img_io, 'PNG')
         img_io.seek(0)
-        
         return send_file(img_io, mimetype='image/png', as_attachment=True, download_name='stego_vault_merged.png')
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -102,18 +82,15 @@ def api_decode_img2img():
         return jsonify({"error": "No image uploaded"}), 400
         
     file = request.files['stego_image']
-    
     try:
         extracted_img = decode_image_from_image(file)
-        
         img_io = io.BytesIO()
         extracted_img.save(img_io, 'PNG')
         img_io.seek(0)
-        
         return send_file(img_io, mimetype='image/png', as_attachment=True, download_name='stego_vault_extracted.png')
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-    
+
 # ==========================================
 # 4. TEXT IN GIF (EOF Injection)
 # ==========================================
@@ -141,8 +118,8 @@ def api_decode_gif():
     return jsonify({"decoded_message": result})
 
 # ==========================================
-# SERVER EXECUTION (MUST BE AT THE BOTTOM)
+# SERVER EXECUTION 
 # ==========================================
-
 if __name__ == '__main__':
-    app.run(port=5000, debug=True)
+    # Changed from 5000 to 5050 to bypass Apple AirPlay
+    app.run(port=5050, debug=True)
