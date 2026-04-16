@@ -33,8 +33,7 @@ const FileUpload = ({ onFileSelect, selectedFile, id }) => (
   </div>
 )
 
-// TODO: For production, change this to your deployed backend URL
-const API_BASE_URL = "http://127.0.0.1:5050";
+const API_BASE_URL = "https://stegovault-api.onrender.com"; // Replace with YOUR actual URL
 
 export default function ImageInImage() {
   const [mode, setMode] = useState('encrypt')
