@@ -1,4 +1,5 @@
 import io
+import os
 from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
 
@@ -122,4 +123,5 @@ def api_decode_gif():
 # ==========================================
 if __name__ == '__main__':
     # Changed from 5000 to 5050 to bypass Apple AirPlay
+    port = int(os.environ.get("PORT", 5050))
     app.run(host="0.0.0.0", port=port)

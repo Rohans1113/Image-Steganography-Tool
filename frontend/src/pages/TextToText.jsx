@@ -60,6 +60,7 @@ export default function TextToText() {
 
   // --- UPDATED API INTEGRATION ---
   const handleRun = async () => {
+    if (loading) return
     setLoading(true); 
     setOutput('');
 
@@ -110,11 +111,11 @@ export default function TextToText() {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
               <div>
                 {label('Your Text (public-facing)')}
-                {textarea({ placeholder: 'Enter the innocent-looking text that will carry the hidden message...', value: coverText, onChange: e => setCoverText(e.target.value), tall: true })}
+                {textarea({ placeholder: 'Enter the innocent-looking text that will carry the hidden message...', value: coverText, onChange: e => setCoverText(e.target.value), tall: true, disabled: loading, style: loading ? { cursor: 'not-allowed', opacity: 0.6 } : undefined })}
               </div>
               <div>
                 {label('Secret Message (to hide)')}
-                {textarea({ placeholder: 'Enter the secret message you want to conceal...', value: secretMsg, onChange: e => setSecretMsg(e.target.value), tall: true })}
+                {textarea({ placeholder: 'Enter the secret message you want to conceal...', value: secretMsg, onChange: e => setSecretMsg(e.target.value), tall: true, disabled: loading, style: loading ? { cursor: 'not-allowed', opacity: 0.6 } : undefined })}
               </div>
             </div>
           </>
@@ -122,7 +123,7 @@ export default function TextToText() {
           <>
             <div>
               {label('Stego Text (paste text to decode)')}
-              {textarea({ placeholder: 'Paste the text that may contain a hidden message. The tool will scan for invisible zero-width characters...', value: stegoInput, onChange: e => setStegoInput(e.target.value), tall: true, style: { minHeight: '180px' } })}
+              {textarea({ placeholder: 'Paste the text that may contain a hidden message. The tool will scan for invisible zero-width characters...', value: stegoInput, onChange: e => setStegoInput(e.target.value), tall: true, disabled: loading, style: loading ? { minHeight: '180px', cursor: 'not-allowed', opacity: 0.6 } : { minHeight: '180px' } })}
             </div>
           </>
         )}
@@ -131,6 +132,7 @@ export default function TextToText() {
           <button
             onClick={handleRun}
             disabled={loading}
+            aria-busy={loading}
             style={{
               backgroundColor: ACCENT, border: 'none', borderRadius: '6px',
               color: '#080808', fontFamily: "'Space Grotesk', sans-serif",
@@ -141,7 +143,7 @@ export default function TextToText() {
             onMouseEnter={e => { if(!loading) e.target.style.opacity = '0.85' }}
             onMouseLeave={e => { if(!loading) e.target.style.opacity = '1' }}
           >
-            {mode === 'encrypt' ? 'Encode Message →' : 'Extract Secret →'}
+            {loading ? 'Processing...' : (mode === 'encrypt' ? 'Encode Message →' : 'Extract Secret →')}
           </button>
           
         </div>

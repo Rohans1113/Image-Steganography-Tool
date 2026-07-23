@@ -2,28 +2,25 @@ import React, { useState, useEffect } from 'react'
 import { Download, Copy, CheckCheck, Terminal, Sparkles } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 
-const LOADING_MESSAGES = [
-  "Encrypting data...",
-  "Embedding payload...",
-  "Processing image...",
-  "Almost done..."
-];
+const PRIMARY_LOADING_MESSAGE = 'processing...'
+const SECONDARY_LOADING_MESSAGE = 'Preparing secure steganography engine...'
+const SECONDARY_MESSAGE_DELAY = 3000
 
 export default function OutputPanel({ output, type = 'text', loading = false, accentColor = '#00ff87' }) {
   const [copied, setCopied] = useState(false)
-  const [messageIndex, setMessageIndex] = useState(0)
+  const [showSecondaryMessage, setShowSecondaryMessage] = useState(false)
 
-  // Cycle through loading messages
   useEffect(() => {
-    let interval;
     if (loading) {
-      interval = setInterval(() => {
-        setMessageIndex((prev) => (prev + 1) % LOADING_MESSAGES.length);
-      }, 2000); // Change message every 2 seconds
+      setShowSecondaryMessage(false)
+      const timeout = setTimeout(() => {
+        setShowSecondaryMessage(true)
+      }, SECONDARY_MESSAGE_DELAY)
+
+      return () => clearTimeout(timeout)
     } else {
-      setMessageIndex(0); // Reset when not loading
+      setShowSecondaryMessage(false)
     }
-    return () => clearInterval(interval);
   }, [loading]);
 
   const handleCopy = () => {
@@ -63,7 +60,7 @@ export default function OutputPanel({ output, type = 'text', loading = false, ac
       borderRadius: '8px',
       backgroundColor: '#0a0a0a',
       overflow: 'hidden',
-    }}>
+    }} aria-busy={loading}>
       {/* Header bar */}
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -133,27 +130,29 @@ export default function OutputPanel({ output, type = 'text', loading = false, ac
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
               <span style={{
                 fontFamily: "'Space Grotesk', sans-serif",
-                fontSize: '0.95rem', color: '#ffffff', fontWeight: 500
+                fontSize: '0.95rem', color: '#ffffff', fontWeight: 500,
+                textTransform: 'lowercase', letterSpacing: '0.02em'
               }}>
-                Processing your data...
+                {PRIMARY_LOADING_MESSAGE}
               </span>
-              
-              {/* Cycling Status Text */}
-              <div style={{ height: '20px', overflow: 'hidden', position: 'relative', width: '100%', display: 'flex', justifyContent: 'center' }}>
+
+              <div style={{ minHeight: '20px', display: 'flex', justifyContent: 'center' }}>
                 <AnimatePresence mode="wait">
-                  <motion.span
-                    key={messageIndex}
-                    initial={{ y: 20, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    exit={{ y: -20, opacity: 0 }}
-                    transition={{ duration: 0.3 }}
-                    style={{
-                      fontFamily: "'JetBrains Mono', monospace",
-                      fontSize: '0.75rem', color: '#888', position: 'absolute'
-                    }}
-                  >
-                    • {LOADING_MESSAGES[messageIndex]}
-                  </motion.span>
+                  {showSecondaryMessage && (
+                    <motion.span
+                      key="secondary-loading-message"
+                      initial={{ y: 8, opacity: 0 }}
+                      animate={{ y: 0, opacity: 1 }}
+                      exit={{ y: -8, opacity: 0 }}
+                      transition={{ duration: 0.25 }}
+                      style={{
+                        fontFamily: "'JetBrains Mono', monospace",
+                        fontSize: '0.75rem', color: '#888', textAlign: 'center'
+                      }}
+                    >
+                      • {SECONDARY_LOADING_MESSAGE}
+                    </motion.span>
+                  )}
                 </AnimatePresence>
               </div>
             </div>
