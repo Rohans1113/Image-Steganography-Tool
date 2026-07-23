@@ -33,6 +33,8 @@ const FileUpload = ({ onFileSelect, selectedFile, id }) => (
   </div>
 )
 
+const API_BASE_URL = "https://stegovault-api.onrender.com"; // Replace with YOUR actual URL
+
 export default function ImageInImage() {
   const [mode, setMode] = useState('encrypt')
   
@@ -60,7 +62,7 @@ export default function ImageInImage() {
         formData.append('cover_image', coverImage);
         formData.append('secret_image', secretImage);
 
-        const response = await fetch('http://127.0.0.1:5050/api/encode-img2img', {
+        const response = await fetch(`${API_BASE_URL}/api/encode-img2img`, {
           method: 'POST',
           body: formData
         });
@@ -82,7 +84,7 @@ export default function ImageInImage() {
         const formData = new FormData();
         formData.append('stego_image', stegoImage);
 
-        const response = await fetch('http://127.0.0.1:5050/api/decode-img2img', {
+        const response = await fetch(`${API_BASE_URL}/api/decode-img2img`, {
           method: 'POST',
           body: formData
         });

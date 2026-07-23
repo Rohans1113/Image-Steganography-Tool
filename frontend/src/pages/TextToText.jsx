@@ -48,6 +48,8 @@ const Tip = ({ text }) => (
   </div>
 )
 
+const API_BASE_URL = "https://stegovault-api.onrender.com"; // Replace with YOUR actual URL
+
 export default function TextToText() {
   const [mode, setMode] = useState('encrypt')
   const [coverText, setCoverText] = useState('')
@@ -64,7 +66,7 @@ export default function TextToText() {
     try {
       if (mode === 'encrypt') {
         // CHANGED: Port 5000 to 5050
-        const response = await fetch('http://127.0.0.1:5050/api/encode', {
+        const response = await fetch(`${API_BASE_URL}/api/encode`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ cover_text: coverText, secret_message: secretMsg })
@@ -74,7 +76,7 @@ export default function TextToText() {
         setOutput(data.encoded_text || 'Error: Could not encode text.');
       } else {
         // CHANGED: Port 5000 to 5050
-        const response = await fetch('http://127.0.0.1:5050/api/decode', {
+        const response = await fetch(`${API_BASE_URL}/api/decode`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ encoded_text: stegoInput })
