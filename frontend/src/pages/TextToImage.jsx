@@ -52,7 +52,7 @@ const FileUpload = ({ onFileSelect, selectedFile }) => (
   </div>
 )
 
-const API_BASE_URL = "https://stegovault-cmgd.onrender.com"; // Replace with YOUR actual URL
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL; // Replace with YOUR actual URL
 
 export default function TextInImage() {
   const [mode, setMode] = useState('encrypt')
