@@ -78,7 +78,7 @@ export default function TextInGif() {
         formData.append('cover_gif', coverGif);
         formData.append('secret_message', secretMsg);
 
-        const response = await fetch('http://127.0.0.1:5050/api/encode-gif', {
+        const response = await fetch('https://stegovault-cmgd.onrender.com/api/encode-gif', {
           method: 'POST',
           body: formData
         });
@@ -101,7 +101,7 @@ export default function TextInGif() {
         formData.append('stego_gif', stegoGif);
 
         // CHANGED: Fixed this port from 5000 to 5050
-        const response = await fetch('http://127.0.0.1:5050/api/decode-gif', {
+        const response = await fetch('https://stegovault-cmgd.onrender.com/api/decode-gif', {
           method: 'POST',
           body: formData
         });
