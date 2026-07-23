@@ -48,7 +48,7 @@ const Tip = ({ text }) => (
   </div>
 )
 
-const API_BASE_URL = "https://stegovault-api.onrender.com"; // Replace with YOUR actual URL
+const API_BASE_URL = "http://127.0.0.1:5050"; // Replace with YOUR actual URL
 
 export default function TextToText() {
   const [mode, setMode] = useState('encrypt')
@@ -130,14 +130,16 @@ export default function TextToText() {
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
           <button
             onClick={handleRun}
+            disabled={loading}
             style={{
               backgroundColor: ACCENT, border: 'none', borderRadius: '6px',
               color: '#080808', fontFamily: "'Space Grotesk', sans-serif",
               fontWeight: 700, fontSize: '0.9rem', padding: '12px 32px',
-              cursor: 'pointer', letterSpacing: '0.02em', transition: 'opacity 0.2s',
+              cursor: loading ? 'not-allowed' : 'pointer', letterSpacing: '0.02em', transition: 'opacity 0.2s',
+              opacity: loading ? 0.5 : 1,
             }}
-            onMouseEnter={e => e.target.style.opacity = '0.85'}
-            onMouseLeave={e => e.target.style.opacity = '1'}
+            onMouseEnter={e => { if(!loading) e.target.style.opacity = '0.85' }}
+            onMouseLeave={e => { if(!loading) e.target.style.opacity = '1' }}
           >
             {mode === 'encrypt' ? 'Encode Message →' : 'Extract Secret →'}
           </button>

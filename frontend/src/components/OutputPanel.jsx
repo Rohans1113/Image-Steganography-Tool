@@ -1,8 +1,30 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Download, Copy, CheckCheck, Terminal, Sparkles } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
+
+const LOADING_MESSAGES = [
+  "Encrypting data...",
+  "Embedding payload...",
+  "Processing image...",
+  "Almost done..."
+];
 
 export default function OutputPanel({ output, type = 'text', loading = false, accentColor = '#00ff87' }) {
   const [copied, setCopied] = useState(false)
+  const [messageIndex, setMessageIndex] = useState(0)
+
+  // Cycle through loading messages
+  useEffect(() => {
+    let interval;
+    if (loading) {
+      interval = setInterval(() => {
+        setMessageIndex((prev) => (prev + 1) % LOADING_MESSAGES.length);
+      }, 2000); // Change message every 2 seconds
+    } else {
+      setMessageIndex(0); // Reset when not loading
+    }
+    return () => clearInterval(interval);
+  }, [loading]);
 
   const handleCopy = () => {
     if (typeof output === 'string') {
@@ -10,6 +32,29 @@ export default function OutputPanel({ output, type = 'text', loading = false, ac
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     }
+  }
+
+  const handleDownload = () => {
+    if (!output || type === 'text') return;
+    
+    // Create a temporary anchor element
+    const a = document.createElement('a');
+    a.href = output;
+    
+    // Determine extension based on type if possible, or default to png
+    // In our app, type is just 'image', but outputs are blob URLs of png or gif.
+    const timestamp = new Date().getTime();
+    // Assuming the URL might be a blob or base64. If it's a gif, it usually has gif mime type, but .png is a safe default unless we know it's a gif.
+    // The instructions say: "Preserve the original file extension." 
+    // Since output is a URL object (blob:http://...), it doesn't have an extension in the string.
+    // We'll use a generic .png unless we know it's a gif from the context.
+    const isGif = window.location.pathname.includes('gif');
+    const ext = isGif ? 'gif' : 'png';
+    a.download = `stegovault_encoded_${timestamp}.${ext}`;
+    
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
   }
 
   return (
@@ -40,7 +85,7 @@ export default function OutputPanel({ output, type = 'text', loading = false, ac
           </span>
         </div>
         <div style={{ display: 'flex', gap: '6px' }}>
-          {output && type === 'text' && (
+          {output && type === 'text' && !loading && (
             <button onClick={handleCopy} style={{
               background: 'none', border: '1px solid #1e1e1e', borderRadius: '4px',
               color: copied ? accentColor : '#ffffff', padding: '3px 10px', cursor: 'pointer',
@@ -51,13 +96,17 @@ export default function OutputPanel({ output, type = 'text', loading = false, ac
               {copied ? 'copied!' : 'copy'}
             </button>
           )}
-          {output && type !== 'text' && (
-            <button style={{
+          {output && type !== 'text' && !loading && (
+            <button onClick={handleDownload} style={{
               background: 'none', border: '1px solid #1e1e1e', borderRadius: '4px',
               color: '#ffffff', padding: '3px 10px', cursor: 'pointer',
               fontFamily: "'JetBrains Mono', monospace", fontSize: '0.68rem',
               display: 'flex', alignItems: 'center', gap: '5px',
-            }}>
+              transition: 'background-color 0.2s, color 0.2s'
+            }}
+            onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#1e1e1e'; e.currentTarget.style.color = accentColor; }}
+            onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#ffffff'; }}
+            >
               <Download size={11} /> download
             </button>
           )}
@@ -74,14 +123,42 @@ export default function OutputPanel({ output, type = 'text', loading = false, ac
       }}>
         {loading ? (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
-            <Sparkles size={20} color={accentColor} style={{ opacity: 0.5, animation: 'blink 1s infinite' }} />
-            <span style={{
-              fontFamily: "'JetBrains Mono', monospace",
-              fontSize: '0.75rem', color: '#ffffff', letterSpacing: '0.08em',
-            }}>
-              processing...
-            </span>
-            <div style={{ width: '160px', height: '2px', backgroundColor: '#1a1a1a', borderRadius: '1px', position: 'relative', overflow: 'hidden' }}>
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
+            >
+              <Sparkles size={24} color={accentColor} />
+            </motion.div>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+              <span style={{
+                fontFamily: "'Space Grotesk', sans-serif",
+                fontSize: '0.95rem', color: '#ffffff', fontWeight: 500
+              }}>
+                Processing your data...
+              </span>
+              
+              {/* Cycling Status Text */}
+              <div style={{ height: '20px', overflow: 'hidden', position: 'relative', width: '100%', display: 'flex', justifyContent: 'center' }}>
+                <AnimatePresence mode="wait">
+                  <motion.span
+                    key={messageIndex}
+                    initial={{ y: 20, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    exit={{ y: -20, opacity: 0 }}
+                    transition={{ duration: 0.3 }}
+                    style={{
+                      fontFamily: "'JetBrains Mono', monospace",
+                      fontSize: '0.75rem', color: '#888', position: 'absolute'
+                    }}
+                  >
+                    • {LOADING_MESSAGES[messageIndex]}
+                  </motion.span>
+                </AnimatePresence>
+              </div>
+            </div>
+
+            <div style={{ width: '160px', height: '2px', backgroundColor: '#1a1a1a', borderRadius: '1px', position: 'relative', overflow: 'hidden', marginTop: '4px' }}>
               <div style={{
                 position: 'absolute', height: '100%', width: '55%',
                 backgroundColor: accentColor, borderRadius: '1px',
@@ -102,7 +179,7 @@ export default function OutputPanel({ output, type = 'text', loading = false, ac
           )
         ) : (
           <div style={{ textAlign: 'center' }}>
-            <Terminal size={18} color="#222" style={{ marginBottom: '8px' }} />
+            <Terminal size={18} color="#222" style={{ marginBottom: '8px', margin: '0 auto' }} />
             <p style={{
               fontFamily: "'JetBrains Mono', monospace",
               fontSize: '0.75rem', color: '#222',
