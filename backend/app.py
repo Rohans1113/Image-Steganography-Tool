@@ -122,4 +122,4 @@ def api_decode_gif():
 # ==========================================
 if __name__ == '__main__':
     # Changed from 5000 to 5050 to bypass Apple AirPlay
-    app.run(port=5050, debug=True)
+    app.run(host="0.0.0.0", port=port)
