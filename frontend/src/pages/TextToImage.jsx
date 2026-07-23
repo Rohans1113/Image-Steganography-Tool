@@ -52,7 +52,7 @@ const FileUpload = ({ onFileSelect, selectedFile }) => (
   </div>
 )
 
-const API_BASE_URL = "https://stegovault-api.onrender.com"; // Replace with YOUR actual URL
+const API_BASE_URL = "http://127.0.0.1:5050"; // Replace with YOUR actual URL
 
 export default function TextInImage() {
   const [mode, setMode] = useState('encrypt')
@@ -159,30 +159,27 @@ export default function TextInImage() {
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
           <button
             onClick={handleRun}
+            disabled={loading}
             style={{
               backgroundColor: ACCENT, border: 'none', borderRadius: '6px',
               color: '#080808', fontFamily: "'Space Grotesk', sans-serif",
               fontWeight: 700, fontSize: '0.9rem', padding: '12px 32px',
-              cursor: 'pointer', transition: 'opacity 0.2s',
+              cursor: loading ? 'not-allowed' : 'pointer', transition: 'opacity 0.2s',
+              opacity: loading ? 0.5 : 1,
             }}
-            onMouseEnter={e => e.target.style.opacity = '0.85'}
-            onMouseLeave={e => e.target.style.opacity = '1'}
+            onMouseEnter={e => { if(!loading) e.target.style.opacity = '0.85' }}
+            onMouseLeave={e => { if(!loading) e.target.style.opacity = '1' }}
           >
             {mode === 'encrypt' ? 'Hide Data in Image →' : 'Extract Data →'}
           </button>
         </div>
 
-        {/* Adjusting how output is rendered based on whether it is an image or text */}
-        {output && output.type === 'text' && (
-           <OutputPanel output={output.content} type="text" loading={loading} accentColor={ACCENT} />
-        )}
-
-        {output && output.type === 'image' && (
-          <div style={{ marginTop: '1rem', padding: '1rem', border: '1px solid #1e1e1e', borderRadius: '6px', backgroundColor: '#0f0f0f' }}>
-             {label('Encoded Image (Right-click to Save)')}
-             <img src={output.content} alt="Encoded Stego" style={{ maxWidth: '100%', height: 'auto', borderRadius: '4px' }} />
-          </div>
-        )}
+        <OutputPanel 
+          output={output ? output.content : null} 
+          type={output ? output.type : 'text'} 
+          loading={loading} 
+          accentColor={ACCENT} 
+        />
 
       </div>
     </PageLayout>

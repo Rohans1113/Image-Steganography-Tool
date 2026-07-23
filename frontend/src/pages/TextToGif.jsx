@@ -156,29 +156,27 @@ export default function TextInGif() {
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
           <button
             onClick={handleRun}
+            disabled={loading}
             style={{
               backgroundColor: ACCENT, border: 'none', borderRadius: '6px',
               color: '#080808', fontFamily: "'Space Grotesk', sans-serif",
               fontWeight: 700, fontSize: '0.9rem', padding: '12px 32px',
-              cursor: 'pointer', transition: 'opacity 0.2s',
+              cursor: loading ? 'not-allowed' : 'pointer', transition: 'opacity 0.2s',
+              opacity: loading ? 0.5 : 1,
             }}
-            onMouseEnter={e => e.target.style.opacity = '0.85'}
-            onMouseLeave={e => e.target.style.opacity = '1'}
+            onMouseEnter={e => { if(!loading) e.target.style.opacity = '0.85' }}
+            onMouseLeave={e => { if(!loading) e.target.style.opacity = '1' }}
           >
             {mode === 'encrypt' ? 'Inject Data into GIF →' : 'Extract Hidden Data →'}
           </button>
         </div>
 
-        {output && output.type === 'text' && (
-           <OutputPanel output={output.content} type="text" loading={loading} accentColor={ACCENT} />
-        )}
-
-        {output && output.type === 'image' && (
-          <div style={{ marginTop: '1rem', padding: '1rem', border: '1px solid #1e1e1e', borderRadius: '6px', backgroundColor: '#0f0f0f' }}>
-             {label('Encoded GIF (Right-click to Save)')}
-             <img src={output.content} alt="Output GIF" style={{ maxWidth: '100%', height: 'auto', borderRadius: '4px' }} />
-          </div>
-        )}
+        <OutputPanel 
+          output={output ? output.content : null} 
+          type={output ? output.type : 'text'} 
+          loading={loading} 
+          accentColor={ACCENT} 
+        />
 
       </div>
     </PageLayout>
