@@ -65,6 +65,7 @@ export default function TextInImage() {
   const [loading, setLoading] = useState(false)
 
   const handleRun = async () => {
+    if (loading) return
     setLoading(true);
     setOutput(null);
 
@@ -139,11 +140,11 @@ export default function TextInImage() {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
               <div>
                 {label('Cover Image')}
-                <FileUpload onFileSelect={setCoverImage} selectedFile={coverImage} />
+                <FileUpload onFileSelect={setCoverImage} selectedFile={coverImage} disabled={loading} />
               </div>
               <div>
                 {label('Secret Message')}
-                {textarea({ placeholder: 'Enter the secret message...', value: secretMsg, onChange: e => setSecretMsg(e.target.value), tall: true })}
+                {textarea({ placeholder: 'Enter the secret message...', value: secretMsg, onChange: e => setSecretMsg(e.target.value), tall: true, disabled: loading, style: loading ? { cursor: 'not-allowed', opacity: 0.6 } : undefined })}
               </div>
             </div>
           </>
@@ -151,7 +152,7 @@ export default function TextInImage() {
           <>
             <div>
               {label('Stego Image (upload to decode)')}
-              <FileUpload onFileSelect={setStegoImage} selectedFile={stegoImage} />
+              <FileUpload onFileSelect={setStegoImage} selectedFile={stegoImage} disabled={loading} />
             </div>
           </>
         )}
@@ -160,6 +161,7 @@ export default function TextInImage() {
           <button
             onClick={handleRun}
             disabled={loading}
+            aria-busy={loading}
             style={{
               backgroundColor: ACCENT, border: 'none', borderRadius: '6px',
               color: '#080808', fontFamily: "'Space Grotesk', sans-serif",
@@ -170,7 +172,7 @@ export default function TextInImage() {
             onMouseEnter={e => { if(!loading) e.target.style.opacity = '0.85' }}
             onMouseLeave={e => { if(!loading) e.target.style.opacity = '1' }}
           >
-            {mode === 'encrypt' ? 'Hide Data in Image →' : 'Extract Data →'}
+            {loading ? 'Processing...' : (mode === 'encrypt' ? 'Hide Data in Image →' : 'Extract Data →')}
           </button>
         </div>
 

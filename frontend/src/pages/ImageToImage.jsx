@@ -15,11 +15,13 @@ const label = (text) => (
   }}>{text}</label>
 )
 
-const FileUpload = ({ onFileSelect, selectedFile, id }) => (
+const FileUpload = ({ onFileSelect, selectedFile, id, disabled = false }) => (
   <div style={{
     border: `1px dashed ${selectedFile ? ACCENT : '#333'}`,
     borderRadius: '6px', padding: '2rem', textAlign: 'center',
-    backgroundColor: '#0f0f0f', cursor: 'pointer', transition: 'all 0.2s',
+    backgroundColor: '#0f0f0f', cursor: disabled ? 'not-allowed' : 'pointer', transition: 'all 0.2s',
+    opacity: disabled ? 0.6 : 1,
+    pointerEvents: disabled ? 'none' : 'auto',
   }} onClick={() => document.getElementById(id).click()}>
     <Upload size={24} color={selectedFile ? ACCENT : '#666'} style={{ margin: '0 auto 10px' }} />
     <p style={{ fontFamily: "'Space Grotesk', sans-serif", color: selectedFile ? '#fff' : '#666', fontSize: '0.9rem' }}>
@@ -28,6 +30,7 @@ const FileUpload = ({ onFileSelect, selectedFile, id }) => (
     <input
       id={id} type="file" accept="image/png, image/jpeg"
       style={{ display: 'none' }}
+      disabled={disabled}
       onChange={(e) => onFileSelect(e.target.files[0])}
     />
   </div>
@@ -47,6 +50,7 @@ export default function ImageInImage() {
   const [loading, setLoading] = useState(false)
 
   const handleRun = async () => {
+    if (loading) return
     setLoading(true);
     setOutput(null);
 
@@ -120,11 +124,11 @@ export default function ImageInImage() {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
               <div>
                 {label('Cover Image (Public)')}
-                <FileUpload id="upload-cover" onFileSelect={setCoverImage} selectedFile={coverImage} />
+                <FileUpload id="upload-cover" onFileSelect={setCoverImage} selectedFile={coverImage} disabled={loading} />
               </div>
               <div>
                 {label('Secret Image (To Hide)')}
-                <FileUpload id="upload-secret" onFileSelect={setSecretImage} selectedFile={secretImage} />
+                <FileUpload id="upload-secret" onFileSelect={setSecretImage} selectedFile={secretImage} disabled={loading} />
               </div>
             </div>
           </>
@@ -132,7 +136,7 @@ export default function ImageInImage() {
           <>
             <div>
               {label('Stego Image (upload to extract secret photo)')}
-              <FileUpload id="upload-stego" onFileSelect={setStegoImage} selectedFile={stegoImage} />
+              <FileUpload id="upload-stego" onFileSelect={setStegoImage} selectedFile={stegoImage} disabled={loading} />
             </div>
           </>
         )}
@@ -141,6 +145,7 @@ export default function ImageInImage() {
           <button
             onClick={handleRun}
             disabled={loading}
+            aria-busy={loading}
             style={{
               backgroundColor: ACCENT, border: 'none', borderRadius: '6px',
               color: '#080808', fontFamily: "'Space Grotesk', sans-serif",
@@ -151,7 +156,7 @@ export default function ImageInImage() {
             onMouseEnter={e => { if(!loading) e.target.style.opacity = '0.85' }}
             onMouseLeave={e => { if(!loading) e.target.style.opacity = '1' }}
           >
-            {mode === 'encrypt' ? 'Merge Images →' : 'Extract Hidden Image →'}
+            {loading ? 'Processing...' : (mode === 'encrypt' ? 'Merge Images →' : 'Extract Hidden Image →')}
           </button>
         </div>
 

@@ -1,7 +1,7 @@
 import React from 'react'
 import { Lock, Unlock } from 'lucide-react'
 
-export default function TabSwitcher({ active, onChange, accentColor = '#00ff87' }) {
+export default function TabSwitcher({ active, onChange, accentColor = '#00ff87', disabled = false }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
       <span style={{
@@ -21,10 +21,11 @@ export default function TabSwitcher({ active, onChange, accentColor = '#00ff87' 
             <button
               key={tab.id}
               onClick={() => onChange(tab.id)}
+              disabled={disabled}
               style={{
                 display: 'flex', alignItems: 'center', gap: '8px',
                 padding: '10px 24px',
-                border: 'none', outline: 'none', cursor: 'pointer',
+                border: 'none', outline: 'none',
                 transition: 'all 0.2s',
                 backgroundColor: isActive ? accentColor : '#0f0f0f',
                 color: isActive ? '#080808' : '#b7b7b7',
@@ -33,6 +34,9 @@ export default function TabSwitcher({ active, onChange, accentColor = '#00ff87' 
                 fontSize: '0.85rem',
                 letterSpacing: '0.02em',
                 borderRight: tab.id === 'encrypt' ? '1px solid #1e1e1e' : 'none',
+                cursor: disabled ? 'not-allowed' : 'pointer',
+                opacity: disabled && !isActive ? 0.5 : 1,
+                pointerEvents: disabled ? 'none' : 'auto',
               }}
             >
               <tab.icon size={13} strokeWidth={2} />

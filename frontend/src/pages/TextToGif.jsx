@@ -34,11 +34,13 @@ const textarea = (props) => (
   />
 )
 
-const FileUpload = ({ onFileSelect, selectedFile, id }) => (
+const FileUpload = ({ onFileSelect, selectedFile, id, disabled = false }) => (
   <div style={{
     border: `1px dashed ${selectedFile ? ACCENT : '#333'}`,
     borderRadius: '6px', padding: '2rem', textAlign: 'center',
-    backgroundColor: '#0f0f0f', cursor: 'pointer', transition: 'all 0.2s',
+    backgroundColor: '#0f0f0f', cursor: disabled ? 'not-allowed' : 'pointer', transition: 'all 0.2s',
+    opacity: disabled ? 0.6 : 1,
+    pointerEvents: disabled ? 'none' : 'auto',
   }} onClick={() => document.getElementById(id).click()}>
     <Upload size={24} color={selectedFile ? ACCENT : '#666'} style={{ margin: '0 auto 10px' }} />
     <p style={{ fontFamily: "'Space Grotesk', sans-serif", color: selectedFile ? '#fff' : '#666', fontSize: '0.9rem' }}>
@@ -47,6 +49,7 @@ const FileUpload = ({ onFileSelect, selectedFile, id }) => (
     <input
       id={id} type="file" accept="image/gif"
       style={{ display: 'none' }}
+      disabled={disabled}
       onChange={(e) => onFileSelect(e.target.files[0])}
     />
   </div>
@@ -63,6 +66,7 @@ export default function TextInGif() {
   const [loading, setLoading] = useState(false)
 
   const handleRun = async () => {
+    if (loading) return
     setLoading(true);
     setOutput(null);
 
@@ -136,11 +140,11 @@ export default function TextInGif() {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
               <div>
                 {label('Cover GIF')}
-                <FileUpload id="upload-cover-gif" onFileSelect={setCoverGif} selectedFile={coverGif} />
+                <FileUpload id="upload-cover-gif" onFileSelect={setCoverGif} selectedFile={coverGif} disabled={loading} />
               </div>
               <div>
                 {label('Secret Message')}
-                {textarea({ placeholder: 'Enter the secret message...', value: secretMsg, onChange: e => setSecretMsg(e.target.value), tall: true })}
+                {textarea({ placeholder: 'Enter the secret message...', value: secretMsg, onChange: e => setSecretMsg(e.target.value), tall: true, disabled: loading, style: loading ? { cursor: 'not-allowed', opacity: 0.6 } : undefined })}
               </div>
             </div>
           </>
@@ -148,7 +152,7 @@ export default function TextInGif() {
           <>
             <div>
               {label('Stego GIF (upload to extract message)')}
-              <FileUpload id="upload-stego-gif" onFileSelect={setStegoGif} selectedFile={stegoGif} />
+              <FileUpload id="upload-stego-gif" onFileSelect={setStegoGif} selectedFile={stegoGif} disabled={loading} />
             </div>
           </>
         )}
@@ -157,6 +161,7 @@ export default function TextInGif() {
           <button
             onClick={handleRun}
             disabled={loading}
+            aria-busy={loading}
             style={{
               backgroundColor: ACCENT, border: 'none', borderRadius: '6px',
               color: '#080808', fontFamily: "'Space Grotesk', sans-serif",
@@ -167,7 +172,7 @@ export default function TextInGif() {
             onMouseEnter={e => { if(!loading) e.target.style.opacity = '0.85' }}
             onMouseLeave={e => { if(!loading) e.target.style.opacity = '1' }}
           >
-            {mode === 'encrypt' ? 'Inject Data into GIF →' : 'Extract Hidden Data →'}
+            {loading ? 'Processing...' : (mode === 'encrypt' ? 'Inject Data into GIF →' : 'Extract Hidden Data →')}
           </button>
         </div>
 
