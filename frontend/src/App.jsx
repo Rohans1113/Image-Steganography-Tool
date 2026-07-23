@@ -10,20 +10,48 @@ import ImageToImage from './pages/ImageToImage'
 import TextToGif from './pages/TextToGif'
 import SplashScreen from './components/SplashScreen'
 
+const SPLASH_DURATION_MS = 2500
+
+const splashRuntime = {
+  completed: false,
+  timerId: null,
+  listeners: new Set(),
+}
+
+function scheduleSplashDismissal() {
+  if (splashRuntime.completed || splashRuntime.timerId !== null) return
+
+  splashRuntime.timerId = window.setTimeout(() => {
+    splashRuntime.completed = true
+    splashRuntime.timerId = null
+    splashRuntime.listeners.forEach((listener) => listener())
+    splashRuntime.listeners.clear()
+  }, SPLASH_DURATION_MS)
+}
+
 export default function App() {
-  const [showSplash, setShowSplash] = useState(true);
+  const [showSplash, setShowSplash] = useState(() => !splashRuntime.completed)
 
   useEffect(() => {
-    // Show splash screen for 2.5 seconds on initial load
-    const timer = setTimeout(() => {
-      setShowSplash(false);
-    }, 2500);
-    return () => clearTimeout(timer);
+    if (splashRuntime.completed) {
+      setShowSplash(false)
+      return
+    }
+
+    const hideSplash = () => setShowSplash(false)
+
+    splashRuntime.listeners.add(hideSplash)
+    scheduleSplashDismissal()
+    setShowSplash(true)
+
+    return () => {
+      splashRuntime.listeners.delete(hideSplash)
+    }
   }, []);
 
   return (
     <>
-      <AnimatePresence>
+      <AnimatePresence initial={false}>
         {showSplash && <SplashScreen key="splash" />}
       </AnimatePresence>
 

@@ -152,12 +152,11 @@ export default function Home() {
           </div>
         </div>
 
-        {/* CTA button — scrolls to module grid, truly centered */}
+        {/* CTA button — scrolls to module grid */}
         <div style={{
-          position: 'absolute', bottom: '2.5rem',
-          left: 0, right: 0,
           zIndex: 2,
           display: 'flex', justifyContent: 'center',
+          marginTop: 'clamp(1.75rem, 4vh, 3rem)',
           animation: 'fadeUp 1s ease 0.8s both',
         }}>
           <button
